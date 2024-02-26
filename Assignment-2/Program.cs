@@ -1,4 +1,14 @@
 ﻿using System;
+class Program
+{
+
+    static void Main(string[] args)
+    {
+        Game game = new Game();
+        game.Start();
+    }
+}
+
 
 public class Position
 {
@@ -103,3 +113,157 @@ public class Board
             Console.WriteLine();                           // Move to next line after displaying each row 
         }
     }
+
+    public bool IsValidMove(Player player, char direction)
+    {
+        // Gets the current position of the player
+        int x = player.Position.X;
+        int y = player.Position.Y;
+
+        switch (direction)
+        {
+            case 'U':
+                y--;
+                break;
+            case 'D':
+                y++;
+                break;
+            case 'L':
+                x--;
+                break;
+            case 'R':
+                x++;
+                break;
+            default:
+                break;
+        }
+
+        if (x >= 0 && x < 6 && y >= 0 && y < 6 && Grid[y, x].Occupant != "O") // checks if the new postion is within board boundary and does not contain an obstalce
+        {
+            return true;    // returns true for a valid move                 
+        }
+        return false;      // returns false for a valid move
+    }
+
+    public void CollectGem(Player player)
+    {
+        Cell cell = Grid[player.Position.Y, player.Position.X]; // gets the cell at the player current position on the board
+        if (cell.Occupant == "G")
+        {
+            player.GemCount++;
+            cell.Occupant = "-";
+        }
+    }
+}
+
+public class Game
+{
+
+    private Board board;
+    private Player player1;
+    private Player player2;
+    private Player currentTurn;
+    private int totalTurns;
+
+    public Game()
+    {
+        board = new Board();
+        player1 = new Player("P1", new Position(0, 0));
+        player2 = new Player("P2", new Position(5, 5));
+        currentTurn = player1;
+        totalTurns = 0;
+
+        InitializeGame();
+    }
+
+    private void InitializeGame()
+    {
+        // Add gems to the board
+        Random random = new Random();
+        for (int i = 0; i < 5; i++)
+        {
+            int x = random.Next(0, 6);
+            int y = random.Next(0, 6);
+            if (board.Grid[y, x].Occupant == "-")
+            {
+                board.Grid[y, x].Occupant = "G";
+            }
+            else
+            {
+                i--;
+            }
+        }
+
+        // Add obstacles to the board
+        for (int i = 0; i < 5; i++)
+        {
+            int x = random.Next(0, 6);
+            int y = random.Next(0, 6);
+            if (board.Grid[y, x].Occupant == "-")
+            {
+                board.Grid[y, x].Occupant = "O";
+            }
+            else
+            {
+                i--;
+            }
+        }
+    }
+
+    public void Start()
+    {
+        while (!IsGameOver())   // Loop to continue the game until its over
+        {
+            Console.WriteLine($"Turn {totalTurns + 1}: {currentTurn.Name}'s turn");
+            board.Display(player1, player2);
+
+            Console.WriteLine("Enter move (U/D/L/R): ");
+            char move = char.ToUpper(Console.ReadKey().KeyChar);
+            Console.WriteLine();
+
+            if (board.IsValidMove(currentTurn, move)) // Checks if the move is valid
+            {
+                currentTurn.Move(move);
+                board.CollectGem(currentTurn);
+                totalTurns++;
+                SwitchTurn();
+            }
+            else
+            {
+                Console.WriteLine("Invalid move");
+            }
+        }
+
+        AnnounceWinner();
+    }
+
+    private void SwitchTurn()
+    {
+        currentTurn = currentTurn == player1 ? player2 : player1; // Switching turns between players
+    }
+
+    private bool IsGameOver() // Checks if the total number of turns is greater or equal to 30
+    {
+        return totalTurns >= 30;
+    }
+
+    private void AnnounceWinner() // Announces the winner after reaching a total of 30 moves
+    {
+        Console.WriteLine("Game over!");
+        Console.WriteLine($"P1 gems: {player1.GemCount}");
+        Console.WriteLine($"P2 gems: {player2.GemCount}");
+        if (player1.GemCount > player2.GemCount)
+        {
+            Console.WriteLine("P1 wins!");
+        }
+        else if (player1.GemCount < player2.GemCount)
+        {
+            Console.WriteLine("P2 wins!");
+        }
+        else
+        {
+            Console.WriteLine("It's a tie!");
+        }
+    }
+}
+
